@@ -1,6 +1,8 @@
 import 'dart:async';
-
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 enum DialogState {
   LOADING,
@@ -19,7 +21,31 @@ class MyScreen extends StatefulWidget {
 }
 
 class _MyScreenState extends State<MyScreen> {
+  File image;
+  String url = 'http://www.deliverykoreacn.com/openapi/orderin_photo';
+  String apikey = 'bmZus5vXIDndhwFaYe3OHk2f7';
+  String uid = 'dkmobilescan';
+  String trackno = '20200218123456789';
+  Dio dio = Dio();
   DialogState _dialogState = DialogState.DISMISSED;
+
+  upto() async {
+    image = await ImagePicker.pickImage(source: ImageSource.camera);
+    if (image != null) {
+//      String path = image.path;
+//      String name = path.split('/').last;
+      
+      FormData formData = FormData.fromMap({
+        "apikey": apikey,
+        'uid': uid,
+        'tackno': trackno,
+        'photo': await MultipartFile.fromFile(image.path)
+      });
+      await dio.post(url, data: formData).then((response) {
+        print(response.data);
+      });
+    }
+  }
 
   void _exportData() {
     setState(() => _dialogState = DialogState.LOADING);
@@ -38,7 +64,9 @@ class _MyScreenState extends State<MyScreen> {
             children: <Widget>[
               RaisedButton(
                 child: Text('Show dialog'),
-                onPressed: () => _exportData(),
+                onPressed: () {
+                  upto();
+                },
               ),
               MyDialog(
                 state: _dialogState,
@@ -67,29 +95,24 @@ class MyDialog extends StatelessWidget {
               ),
             ),
             content: Container(
-              width: 250.0,
-              height: 100.0,
-              child: state == DialogState.LOADING
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 10.0),
-                          child: Text(
-                            "Exporting...",
-                            style: TextStyle(
-                              fontFamily: "OpenSans",
-                              color: Color(0xFF5B6978),
-                            ),
-                          ),
-                        )
-                      ],
+                width: 250.0,
+                height: 100.0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 10.0),
+                      child: Text(
+                        "업로드..",
+                        style: TextStyle(
+                          fontFamily: "OpenSans",
+                          color: Color(0xFF5B6978),
+                        ),
+                      ),
                     )
-                  : Center(
-                      child: Text('Data loaded with success'),
-                    ),
-            ),
+                  ],
+                )),
           );
   }
 }
