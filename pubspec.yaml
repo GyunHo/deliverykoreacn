@@ -19,6 +19,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  modal_progress_hud:
   image_picker:
   qrscan:
   dio:
