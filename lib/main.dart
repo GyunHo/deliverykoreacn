@@ -5,7 +5,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
-import 'package:com/detail.dart';
+import 'package:DeliveryKorea/detail.dart';
+import 'package:connectivity/connectivity.dart';
+import 'package:qrscan/qrscan.dart' as scan;
 
 void main() {
   runApp(MaterialApp(
@@ -18,6 +20,7 @@ class MyScreen extends StatefulWidget {
 }
 
 class _MyScreenState extends State<MyScreen> {
+  GlobalKey<ScaffoldState> _globalKey = GlobalKey<ScaffoldState>();
   Response res;
   List<File> images = [];
   TextEditingController barcodeController = TextEditingController();
@@ -25,34 +28,41 @@ class _MyScreenState extends State<MyScreen> {
   String url = 'http://www.deliverykoreacn.com/openapi/orderin_photo';
   String apikey = 'bmZus5vXIDndhwFaYe3OHk2f7';
   String uid = 'dkmobilescan';
-  String trackno = '20204857457455';
+
   Dio dio = Dio();
   bool _isLoading = false;
 
-  Future<Response> upto() async {
-//    List<MultipartFile> uploadImages = [];
-//    images.forEach((file) {
-//      uploadImages.add(MultipartFile.fromFileSync(file.path));
-//    });
-//
-//    print(uploadImages);
+  Future<bool> internetCheck() async {
+    ConnectivityResult result = await (Connectivity().checkConnectivity());
+    if (result == ConnectivityResult.mobile) {
+      return true;
+    } else if (result == ConnectivityResult.wifi) {
+      return true;
+    }
+    return false;
+  }
 
-    Map<dynamic, dynamic> respon;
-    FormData formData = FormData.fromMap({
+  Future<Response> upLoad(String barcode) async {
+    Map<String, dynamic> entry = {
       "apikey": apikey,
       'uid': uid,
-      'tackno': trackno,
-      'photo': MultipartFile.fromFileSync(images[0].path)
-    });
+      'trackno': barcode
+    };
+    for (int i = 0; i < images.length; i++) {
+      entry['photo_$i'] = MultipartFile.fromFileSync(images[i].path);
+    }
+    FormData formData = FormData.fromMap(entry);
     return await dio.post(url, data: formData);
+  }
+
+  void _clearInfo() {
+    images.clear();
+    barcodeController.text = '';
   }
 
   void _toggle() {
     setState(() {
-      _isLoading = true;
-    });
-    Future.delayed(Duration(seconds: 5)).then((_) {
-      setState(() => _isLoading = false);
+      _isLoading = !_isLoading;
     });
   }
 
@@ -61,6 +71,7 @@ class _MyScreenState extends State<MyScreen> {
     Size size = MediaQuery.of(context).size;
     FocusScopeNode currentFocus = FocusScope.of(context);
     return Scaffold(
+      key: _globalKey,
       appBar: AppBar(
         backgroundColor: Colors.black,
         centerTitle: true,
@@ -113,17 +124,12 @@ class _MyScreenState extends State<MyScreen> {
                                   '스캔',
                                 ),
                                 onPressed: () {
-                                  upto().then((rep) {
-                                    Map<dynamic, dynamic> res =
-                                        jsonDecode(rep.data);
-                                    if (res['error_code'] == '000') {
-                                      Navigator.of(context).push(
-                                          MaterialPageRoute(
-                                              builder: (BuildContext con) {
-                                        return DetailPage(response: rep);
-                                      }));
-                                    }
+                                  scan.scan().then((code){
+                                    setState(() {
+                                      barcodeController.text=code;
+                                    });
                                   });
+
                                 },
                               ),
                             ],
@@ -178,59 +184,102 @@ class _MyScreenState extends State<MyScreen> {
                               ),
                             ],
                           ),
-                          Column(
-                            children: <Widget>[
-                              Container(
-                                width: double.infinity,
-                                height: size.height * 0.2,
-                                child: ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: images.length,
-                                    itemBuilder: (context, index) {
-                                      return Padding(
-                                        padding: const EdgeInsets.all(4.0),
-                                        child: Stack(
-                                          children: <Widget>[
-                                            ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(10.0),
-                                              child: Image.file(
-                                                images[index],
+                          images.length == 0
+                              ? SizedBox()
+                              : Column(
+                                  children: <Widget>[
+                                    Container(
+                                      width: double.infinity,
+                                      height: size.height * 0.2,
+                                      child: ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: images.length,
+                                          itemBuilder: (context, index) {
+                                            return Padding(
+                                              padding:
+                                                  const EdgeInsets.all(4.0),
+                                              child: Stack(
+                                                children: <Widget>[
+                                                  ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10.0),
+                                                    child: Image.file(
+                                                      images[index],
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                                  ),
+                                                  Positioned(
+                                                    child: IconButton(
+                                                      icon: Icon(Icons.cancel),
+                                                      onPressed: () {
+                                                        setState(() {
+                                                          images
+                                                              .removeAt(index);
+                                                        });
+                                                      },
+                                                    ),
+                                                    top: 0.0,
+                                                    right: 0.0,
+                                                  )
+                                                ],
                                               ),
-                                            ),
-                                            Positioned(
-                                              child: IconButton(
-                                                icon: Icon(Icons.cancel),
-                                                onPressed: () {
-                                                  setState(() {
-                                                    images.removeAt(index);
-                                                  });
-                                                },
-                                              ),
-                                              top: 0.0,
-                                              right: 0.0,
-                                            )
-                                          ],
-                                        ),
-                                      );
-                                    }),
-                              ),
-                              SizedBox(height: 5.0),
-                              Container(
-                                width: double.infinity,
-                                height: size.height * 0.05,
-                                child: RaisedButton(
-                                  elevation: 10.0,
-                                  color: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(10.0)),
-                                  child: Text('전송'),
-                                  onPressed: () {},
+                                            );
+                                          }),
+                                    ),
+                                    SizedBox(height: 5.0),
+                                    Container(
+                                      width: double.infinity,
+                                      height: size.height * 0.05,
+                                      child: RaisedButton(
+                                        elevation: 10.0,
+                                        color: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10.0)),
+                                        child: Text('전송'),
+                                        onPressed: () {
+                                          _toggle();
+                                          String bb = '20148556933300'; //05
+//                                  String bb = '20200311475855';//04
+                                          internetCheck().then((internet) {
+                                            if (internet) {
+                                              upLoad(bb).then((rep) {
+                                                Map<dynamic, dynamic> res =
+                                                    jsonDecode(rep.data);
+
+                                                if (res['error_code'] ==
+                                                    '000') {
+                                                  _clearInfo();
+                                                  _toggle();
+
+                                                  Navigator.of(context).push(
+                                                      MaterialPageRoute(builder:
+                                                          (BuildContext con) {
+                                                    return DetailPage(
+                                                      response: rep,
+                                                      barcode: bb,
+                                                      apiKey: apikey,
+                                                      uid: uid,
+                                                    );
+                                                  }));
+                                                }
+                                              });
+                                            } else {
+                                              _toggle();
+                                              _globalKey.currentState
+                                                  .showSnackBar(SnackBar(
+                                                content: Text('인터넷없음'),
+                                                duration:
+                                                    Duration(milliseconds: 800),
+                                              ));
+                                            }
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                     ),
