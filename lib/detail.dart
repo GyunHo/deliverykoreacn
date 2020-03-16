@@ -28,6 +28,8 @@ class _DetailPageState extends State<DetailPage> {
     Map<dynamic, dynamic> jsonData = jsonDecode(widget.response.data);
     withWeight.addAll(jsonData['in_weight']);
     withoutWeight.addAll(jsonData['no_weight']);
+    print('무게필요 : $withWeight');
+    print('무게필요 없음 : $withoutWeight');
     withController = List.generate(withWeight.length, (i) {
       return List.generate(5, (x) {
         return TextEditingController();
@@ -50,7 +52,8 @@ class _DetailPageState extends State<DetailPage> {
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: ListView.builder(
-            itemCount: withWeight.isEmpty?withoutWeight.length:withWeight.length,
+            itemCount: withWeight.isEmpty ? withoutWeight.length : withWeight
+                .length,
             itemBuilder: (context, index) {
               return withWeight.isEmpty
                   ? withoutWeightWidget(index, context)
@@ -62,7 +65,7 @@ class _DetailPageState extends State<DetailPage> {
 
   Widget withoutWeightWidget(int index, BuildContext context) {
     List<dynamic> numbers = withoutWeight[index].split('|');
-    return Container(
+    return numbers[2] == 'N' ? SizedBox() : Container(
       margin: EdgeInsets.symmetric(vertical: 3.0),
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8.0),
@@ -77,7 +80,7 @@ class _DetailPageState extends State<DetailPage> {
                 Text('제품번호 : ${numbers[1]}')
               ],
             ),
-            RaisedButton(
+            numbers[2] == 'N' ? Text('이미 입고된 제품'):RaisedButton(
               color: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0)),
@@ -98,6 +101,9 @@ class _DetailPageState extends State<DetailPage> {
                   'volume_z': '',
                 });
                 dio.post(url, data: data).then((re) {
+                  setState(() {
+                    numbers[2]='N';
+                  });
                   print(re.data);
                 });
               },
@@ -117,6 +123,7 @@ class _DetailPageState extends State<DetailPage> {
     TextEditingController width = controllers[2];
     TextEditingController height = controllers[3];
     TextEditingController depth = controllers[4];
+
     return Container(
       margin: EdgeInsets.symmetric(vertical: 3.0),
       decoration: BoxDecoration(
@@ -132,7 +139,7 @@ class _DetailPageState extends State<DetailPage> {
                 Text('제품번호 : ${numbers[1]}')
               ],
             ),
-            RaisedButton(
+            numbers[2] == 'N' ? Text('이미 입고된 제품') : RaisedButton(
               color: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0)),
@@ -171,7 +178,7 @@ class _DetailPageState extends State<DetailPage> {
           ],
         ),
         contentPadding: EdgeInsets.all(8.0),
-        subtitle: Container(
+        subtitle: numbers[2]=='N'?SizedBox():Container(
           width: double.infinity,
           child: Column(
             children: <Widget>[
@@ -182,6 +189,7 @@ class _DetailPageState extends State<DetailPage> {
                       keyboardType: TextInputType.number,
                       controller: each,
                       decoration: InputDecoration(
+                          labelText: '수량',
                           hintText: '박스수량',
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(4.0))),
@@ -192,6 +200,7 @@ class _DetailPageState extends State<DetailPage> {
                       keyboardType: TextInputType.number,
                       controller: weight,
                       decoration: InputDecoration(
+                          labelText: '무게',
                           hintText: '실제무게(Kg)',
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(4.0))),
@@ -206,6 +215,7 @@ class _DetailPageState extends State<DetailPage> {
                       keyboardType: TextInputType.number,
                       controller: width,
                       decoration: InputDecoration(
+                          labelText: '가로',
                           hintText: '가로(Cm)',
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(4.0))),
@@ -216,6 +226,7 @@ class _DetailPageState extends State<DetailPage> {
                       keyboardType: TextInputType.number,
                       controller: height,
                       decoration: InputDecoration(
+                          labelText: '세로',
                           hintText: '세로(Cm)',
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(4.0))),
@@ -226,6 +237,7 @@ class _DetailPageState extends State<DetailPage> {
                       keyboardType: TextInputType.number,
                       controller: depth,
                       decoration: InputDecoration(
+                          labelText: '너비',
                           hintText: '너비(Cm)',
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(4.0))),

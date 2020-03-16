@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:DeliveryKorea/detail.dart';
 import 'package:connectivity/connectivity.dart';
+
 import 'package:qrscan/qrscan.dart' as scan;
 
 void main() {
@@ -21,50 +22,14 @@ class MyScreen extends StatefulWidget {
 
 class _MyScreenState extends State<MyScreen> {
   GlobalKey<ScaffoldState> _globalKey = GlobalKey<ScaffoldState>();
-  Response res;
   List<File> images = [];
   TextEditingController barcodeController = TextEditingController();
-  File image;
   String url = 'http://www.deliverykoreacn.com/openapi/orderin_photo';
   String apikey = 'bmZus5vXIDndhwFaYe3OHk2f7';
   String uid = 'dkmobilescan';
 
   Dio dio = Dio();
   bool _isLoading = false;
-
-  Future<bool> internetCheck() async {
-    ConnectivityResult result = await (Connectivity().checkConnectivity());
-    if (result == ConnectivityResult.mobile) {
-      return true;
-    } else if (result == ConnectivityResult.wifi) {
-      return true;
-    }
-    return false;
-  }
-
-  Future<Response> upLoad(String barcode) async {
-    Map<String, dynamic> entry = {
-      "apikey": apikey,
-      'uid': uid,
-      'trackno': barcode
-    };
-    for (int i = 0; i < images.length; i++) {
-      entry['photo_$i'] = MultipartFile.fromFileSync(images[i].path);
-    }
-    FormData formData = FormData.fromMap(entry);
-    return await dio.post(url, data: formData);
-  }
-
-  void _clearInfo() {
-    images.clear();
-    barcodeController.text = '';
-  }
-
-  void _toggle() {
-    setState(() {
-      _isLoading = !_isLoading;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -124,12 +89,11 @@ class _MyScreenState extends State<MyScreen> {
                                   '스캔',
                                 ),
                                 onPressed: () {
-                                  scan.scan().then((code){
+                                  scan.scan().then((code) {
                                     setState(() {
-                                      barcodeController.text=code;
+                                      barcodeController.text = code;
                                     });
                                   });
-
                                 },
                               ),
                             ],
@@ -151,14 +115,8 @@ class _MyScreenState extends State<MyScreen> {
                                 child: Text(
                                   '카메라',
                                 ),
-                                onPressed: () async {
-                                  await ImagePicker.pickImage(
-                                          source: ImageSource.camera)
-                                      .then((image) {
-                                    setState(() {
-                                      images.add(image);
-                                    });
-                                  });
+                                onPressed: () {
+                                  addImage(ImageSource.camera);
                                 },
                               ),
                               SizedBox(
@@ -172,14 +130,8 @@ class _MyScreenState extends State<MyScreen> {
                                 child: Text(
                                   '파일',
                                 ),
-                                onPressed: () async {
-                                  await ImagePicker.pickImage(
-                                          source: ImageSource.gallery)
-                                      .then((image) {
-                                    setState(() {
-                                      images.add(image);
-                                    });
-                                  });
+                                onPressed: () {
+                                  addImage(ImageSource.gallery);
                                 },
                               ),
                             ],
@@ -239,19 +191,22 @@ class _MyScreenState extends State<MyScreen> {
                                                 BorderRadius.circular(10.0)),
                                         child: Text('전송'),
                                         onPressed: () {
-                                          _toggle();
-                                          String bb = '20148556933300'; //05
+                                          _onToggle();
+//                                          String bb = '20204857457455'; //04
 //                                  String bb = '20200311475855';//04
+                                          String bb = '20204857457455';
                                           internetCheck().then((internet) {
                                             if (internet) {
                                               upLoad(bb).then((rep) {
                                                 Map<dynamic, dynamic> res =
                                                     jsonDecode(rep.data);
+                                                print(res);
+                                                print(rep.statusMessage);
 
                                                 if (res['error_code'] ==
                                                     '000') {
                                                   _clearInfo();
-                                                  _toggle();
+                                                  _offToggle();
 
                                                   Navigator.of(context).push(
                                                       MaterialPageRoute(builder:
@@ -264,15 +219,14 @@ class _MyScreenState extends State<MyScreen> {
                                                     );
                                                   }));
                                                 }
+                                                else{
+                                                  showAfterSnackBar('파일 업로드 실패');
+                                                }
+                                              }).catchError((e) {
+                                                showAfterSnackBar('어플 오류');
                                               });
                                             } else {
-                                              _toggle();
-                                              _globalKey.currentState
-                                                  .showSnackBar(SnackBar(
-                                                content: Text('인터넷없음'),
-                                                duration:
-                                                    Duration(milliseconds: 800),
-                                              ));
+                                              showAfterSnackBar('인터넷없음');
                                             }
                                           });
                                         },
@@ -291,5 +245,63 @@ class _MyScreenState extends State<MyScreen> {
         ),
       ),
     );
+  }
+
+  Future<bool> internetCheck() async {
+    ConnectivityResult result = await (Connectivity().checkConnectivity());
+    if (result == ConnectivityResult.mobile) {
+      return true;
+    } else if (result == ConnectivityResult.wifi) {
+      return true;
+    }
+    return false;
+  }
+
+  Future<Response> upLoad(String barcode) async {
+    Map<String, dynamic> entry = {
+      "apikey": apikey,
+      'uid': uid,
+      'trackno': barcode
+    };
+    for (int i = 0; i < images.length; i++) {
+      entry['photo_$i'] = MultipartFile.fromFileSync(images[i].path);
+    }
+    FormData formData = FormData.fromMap(entry);
+    return await dio.post(url, data: formData);
+  }
+
+  void _clearInfo() {
+    images.clear();
+    barcodeController.text = '';
+  }
+
+  void _onToggle() {
+    setState(() {
+      _isLoading = true;
+    });
+  }
+
+  void _offToggle() {
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  void showAfterSnackBar(String message) {
+    _offToggle();
+    _globalKey.currentState.showSnackBar(SnackBar(
+      content: Text(message),
+      duration: Duration(milliseconds: 800),
+    ));
+  }
+
+  void addImage(ImageSource source) async {
+    await ImagePicker.pickImage(source: source).then((image) {
+      if (image != null) {
+        setState(() {
+          images.add(image);
+        });
+      }
+    });
   }
 }
