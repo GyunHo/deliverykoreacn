@@ -74,7 +74,7 @@ class _MyScreenState extends State<MyScreen> {
                                 child: TextFormField(
                                   controller: barcodeController,
                                   decoration: InputDecoration(
-                                    hintText: "바코드...",
+                                    hintText: "바코드를 스캔하세요...",
                                     border: InputBorder.none,
                                   ),
                                   enabled: false,
@@ -192,17 +192,13 @@ class _MyScreenState extends State<MyScreen> {
                                         child: Text('전송'),
                                         onPressed: () {
                                           _onToggle();
-//                                          String bb = '20204857457455'; //04
-//                                  String bb = '20200311475855';//04
-                                          String bb = '20204857457455';
+
                                           internetCheck().then((internet) {
                                             if (internet) {
-                                              upLoad(bb).then((rep) {
+                                              String barcode = barcodeController.text;
+                                              upLoad(barcode).then((rep) {
                                                 Map<dynamic, dynamic> res =
                                                     jsonDecode(rep.data);
-                                                print(res);
-                                                print(rep.statusMessage);
-
                                                 if (res['error_code'] ==
                                                     '000') {
                                                   _clearInfo();
@@ -213,20 +209,20 @@ class _MyScreenState extends State<MyScreen> {
                                                           (BuildContext con) {
                                                     return DetailPage(
                                                       response: rep,
-                                                      barcode: bb,
+                                                      barcode: barcode,
                                                       apiKey: apikey,
                                                       uid: uid,
                                                     );
                                                   }));
-                                                }
-                                                else{
-                                                  showAfterSnackBar('파일 업로드 실패');
+                                                } else {
+                                                  showAfterSnackBar(
+                                                      res['error_detail']);
                                                 }
                                               }).catchError((e) {
                                                 showAfterSnackBar('어플 오류');
                                               });
                                             } else {
-                                              showAfterSnackBar('인터넷없음');
+                                              showAfterSnackBar('인터넷 연결상태 확인');
                                             }
                                           });
                                         },
@@ -291,7 +287,7 @@ class _MyScreenState extends State<MyScreen> {
     _offToggle();
     _globalKey.currentState.showSnackBar(SnackBar(
       content: Text(message),
-      duration: Duration(milliseconds: 800),
+      duration: Duration(milliseconds: 1000),
     ));
   }
 
