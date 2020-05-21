@@ -22,6 +22,7 @@ class DetailPage extends StatefulWidget {
 class _DetailPageState extends State<DetailPage> {
   GlobalKey<ScaffoldState> _globalKey = GlobalKey<ScaffoldState>();
   String url = 'http://www.deliverykoreacn.com/openapi/change_order_status';
+
   List<dynamic> withWeight = [];
   List<dynamic> withoutWeight = [];
   List<List<TextEditingController>> withController;
@@ -30,8 +31,21 @@ class _DetailPageState extends State<DetailPage> {
   @override
   void initState() {
     Map<dynamic, dynamic> jsonData = jsonDecode(widget.response.data);
-    List inWeight = jsonData['in_weight'];
-    List noWeight = jsonData['no_weight'];
+    List inWeight = [];
+    List noWeight = [];
+    if (jsonData['in_weight'] is Map) {
+      List weight = jsonData['in_weight'].values.toList();
+      inWeight = weight;
+    } else {
+      inWeight = jsonData['in_weight'];
+    }
+    if (jsonData['no_weight'] is Map) {
+      List nweight = jsonData['no_weight'].values.toList();
+      noWeight = nweight;
+    } else {
+      noWeight = jsonData['no_weight'];
+    }
+
     inWeight.forEach((data) {
       List _in = data.split('|');
       withWeight.add(_in);
