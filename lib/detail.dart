@@ -29,7 +29,6 @@ class _DetailPageState extends State<DetailPage> {
 
   @override
   void initState() {
-
     Map<dynamic, dynamic> jsonData = jsonDecode(widget.response.data);
     List inWeight = jsonData['in_weight'];
     List noWeight = jsonData['no_weight'];
@@ -62,8 +61,11 @@ class _DetailPageState extends State<DetailPage> {
           'order_idx': idx
         });
     Map<String, dynamic> decodeJson = json.decode(response.data);
+
     if (decodeJson['result'] == 'success') {
-      return decodeJson['data'];
+      String rackNo = decodeJson['data']['rack_no'];
+
+      return rackNo.toString();
     }
     return '랙번호 없음';
   }
@@ -115,8 +117,8 @@ class _DetailPageState extends State<DetailPage> {
                 Text('제품번호 : ${numbers[1]}'),
                 FutureBuilder(
                   future: getDeliveryStatus(numbers[0]),
-                  builder: (context, snapshot){
-                    if(snapshot.hasData??false){
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData ?? false) {
                       return Text('랙번호 : ${snapshot.data}');
                     }
                     return Text('랙번호 :');
@@ -205,11 +207,11 @@ class _DetailPageState extends State<DetailPage> {
                 Text('제품번호 : ${numbers[1]}'),
                 FutureBuilder(
                   future: getDeliveryStatus(numbers[0]),
-                  builder: (context, snapshot){
-                    if(snapshot.hasData??false){
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
                       return Text('랙번호 : ${snapshot.data}');
                     }
-                    return Text('랙번호 :');
+                    return Text('랙번호 : 없음');
                   },
                 ),
               ],
