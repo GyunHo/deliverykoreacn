@@ -195,7 +195,8 @@ class _MyScreenState extends State<MyScreen> {
 
                                           internetCheck().then((internet) {
                                             if (internet) {
-                                              String barcode = barcodeController.text;
+//                                              String barcode = barcodeController.text;
+                                              String barcode = '8806002001845';
                                               upLoad(barcode).then((rep) {
                                                 Map<dynamic, dynamic> res =
                                                     jsonDecode(rep.data);

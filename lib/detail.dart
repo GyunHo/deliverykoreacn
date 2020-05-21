@@ -29,6 +29,7 @@ class _DetailPageState extends State<DetailPage> {
 
   @override
   void initState() {
+
     Map<dynamic, dynamic> jsonData = jsonDecode(widget.response.data);
     List inWeight = jsonData['in_weight'];
     List noWeight = jsonData['no_weight'];
@@ -49,6 +50,22 @@ class _DetailPageState extends State<DetailPage> {
       });
     });
     super.initState();
+  }
+
+  Future<String> getDeliveryStatus(String idx) async {
+    Dio dio = Dio();
+    Response response = await dio.get(
+        'http://www.deliverykoreacn.com/openapi/get_delivery',
+        queryParameters: {
+          'uid': widget.uid,
+          'apikey': widget.apiKey,
+          'order_idx': idx
+        });
+    Map<String, dynamic> decodeJson = json.decode(response.data);
+    if (decodeJson['result'] == 'success') {
+      return decodeJson['data'];
+    }
+    return '랙번호 없음';
   }
 
   @override
@@ -92,9 +109,19 @@ class _DetailPageState extends State<DetailPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text('신청번호 : ${numbers[0]}'),
-                Text('제품번호 : ${numbers[1]}')
+                Text('제품번호 : ${numbers[1]}'),
+                FutureBuilder(
+                  future: getDeliveryStatus(numbers[0]),
+                  builder: (context, snapshot){
+                    if(snapshot.hasData??false){
+                      return Text('랙번호 : ${snapshot.data}');
+                    }
+                    return Text('랙번호 :');
+                  },
+                ),
               ],
             ),
             numbers[2] == 'N'
@@ -172,9 +199,19 @@ class _DetailPageState extends State<DetailPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text('신청번호 : ${numbers[0]}'),
-                Text('제품번호 : ${numbers[1]}')
+                Text('제품번호 : ${numbers[1]}'),
+                FutureBuilder(
+                  future: getDeliveryStatus(numbers[0]),
+                  builder: (context, snapshot){
+                    if(snapshot.hasData??false){
+                      return Text('랙번호 : ${snapshot.data}');
+                    }
+                    return Text('랙번호 :');
+                  },
+                ),
               ],
             ),
             numbers[2] == 'N'
