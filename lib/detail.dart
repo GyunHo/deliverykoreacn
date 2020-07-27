@@ -22,6 +22,7 @@ class DetailPage extends StatefulWidget {
 class _DetailPageState extends State<DetailPage> {
   GlobalKey<ScaffoldState> _globalKey = GlobalKey<ScaffoldState>();
   String url = 'http://www.deliverykoreacn.com/openapi/change_order_status';
+
   List<dynamic> withWeight = [];
   List<dynamic> withoutWeight = [];
   List<List<TextEditingController>> withController;
@@ -29,10 +30,22 @@ class _DetailPageState extends State<DetailPage> {
 
   @override
   void initState() {
-
     Map<dynamic, dynamic> jsonData = jsonDecode(widget.response.data);
-    List inWeight = jsonData['in_weight'];
-    List noWeight = jsonData['no_weight'];
+    List inWeight = [];
+    List noWeight = [];
+    if (jsonData['in_weight'] is Map) {
+      List weight = jsonData['in_weight'].values.toList();
+      inWeight = weight;
+    } else {
+      inWeight = jsonData['in_weight'];
+    }
+    if (jsonData['no_weight'] is Map) {
+      List nweight = jsonData['no_weight'].values.toList();
+      noWeight = nweight;
+    } else {
+      noWeight = jsonData['no_weight'];
+    }
+
     inWeight.forEach((data) {
       List _in = data.split('|');
       withWeight.add(_in);
@@ -62,8 +75,11 @@ class _DetailPageState extends State<DetailPage> {
           'order_idx': idx
         });
     Map<String, dynamic> decodeJson = json.decode(response.data);
+
     if (decodeJson['result'] == 'success') {
-      return decodeJson['data'];
+      String rackNo = decodeJson['data']['rack_no'];
+
+      return rackNo.toString();
     }
     return '랙번호 없음';
   }
@@ -115,8 +131,8 @@ class _DetailPageState extends State<DetailPage> {
                 Text('제품번호 : ${numbers[1]}'),
                 FutureBuilder(
                   future: getDeliveryStatus(numbers[0]),
-                  builder: (context, snapshot){
-                    if(snapshot.hasData??false){
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData ?? false) {
                       return Text('랙번호 : ${snapshot.data}');
                     }
                     return Text('랙번호 :');
@@ -205,11 +221,11 @@ class _DetailPageState extends State<DetailPage> {
                 Text('제품번호 : ${numbers[1]}'),
                 FutureBuilder(
                   future: getDeliveryStatus(numbers[0]),
-                  builder: (context, snapshot){
-                    if(snapshot.hasData??false){
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
                       return Text('랙번호 : ${snapshot.data}');
                     }
-                    return Text('랙번호 :');
+                    return Text('랙번호 : 없음');
                   },
                 ),
               ],
